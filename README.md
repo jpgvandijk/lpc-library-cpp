@@ -1,1 +1,1 @@
-lpc-library-cpp
+C++ functions for the LPC1769
