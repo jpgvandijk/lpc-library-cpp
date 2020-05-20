@@ -56,7 +56,7 @@ namespace System {
 		busy = false;
 	}
 
-	void I2C::initialize (uint32_t pin_sda, uint32_t pin_scl, System::Pin::Function function, uint32_t peripheral_frequency, ModeSelection mode_selection) {
+	void I2C::initialize (uint32_t pin_sda, Pin::Function function, uint32_t peripheral_frequency, Mode mode) {
 
 		// Init SDA pin
 		Pin::setFunction(pin_sda, function);
@@ -64,21 +64,22 @@ namespace System {
 		Pin::setOpenDrain(pin_sda, true);
 
 		// Init SCL pin
+		uint32_t pin_scl = pin_sda + 1;
 		Pin::setFunction(pin_scl, function);
 		Pin::setPullMode(pin_scl, Pin::PullMode::no_pull);
 		Pin::setOpenDrain(pin_scl, true);
 
 		// Determine the total clock divider
 		uint32_t bus_frequency = 100000;
-		if (mode_selection == I2C::ModeSelection::fast_mode) {
+		if (mode == I2C::Mode::fast_mode) {
 			bus_frequency = 400000;
-		} else if (mode_selection == I2C::ModeSelection::fast_mode_plus) {
+		} else if (mode == I2C::Mode::fast_mode_plus) {
 			bus_frequency = 1000000;
 		}
 		uint32_t sum = peripheral_frequency / bus_frequency;
 
 		// Set according to desired duty cycle
-		if (mode_selection == I2C::ModeSelection::standard) {
+		if (mode == I2C::Mode::standard) {
 			_lpc_i2c->I2SCLH = sum / 2;
 		} else {
 			_lpc_i2c->I2SCLH = sum / 3;
@@ -217,21 +218,20 @@ namespace System {
 		instance().handle();
 	}
 
-	void I2C0::initialize (Clock::PeripheralClockSpeed clock, ModeSelection mode_selection) {
+	void I2C0::initialize (Clock::PeripheralClockSpeed clock, Mode mode) {
 		Clock::enablePeripheral(Clock::PeripheralPower::i2c_0_power);
 		Clock::setPeripheralClock(Clock::PeripheralClock::i2c_0_clock, clock);
 		uint32_t frequency = Clock::getPeripheralClockFrequency(Clock::PeripheralClock::i2c_0_clock);
-		System::Interrupt::enable(I2C0_IRQn);
 
 		// Select the desired operating mode for the pin drivers
 		uint32_t pin_sda = PIN(0, 27);
-		uint32_t pin_scl = PIN(0, 28);
-		if (mode_selection == I2C::ModeSelection::fast_mode_plus) {
+		if (mode == I2C::Mode::fast_mode_plus) {
 			LPC_PINCON->I2CPADCFG = 0x05;
 		} else {
 			LPC_PINCON->I2CPADCFG = 0x00;
 		}
-		I2C::initialize(pin_sda, pin_scl, Pin::Function::alternate_1, frequency, mode_selection);
+		I2C::initialize(pin_sda, Pin::Function::alternate_1, frequency, mode);
+		Interrupt::enable(I2C0_IRQn);
 	}
 
 	/************************************
@@ -251,19 +251,17 @@ namespace System {
 		instance().handle();
 	}
 
-	void I2C1::initialize (Clock::PeripheralClockSpeed clock, ModeSelection mode_selection, PinSelection pin_selection) {
+	void I2C1::initialize (Clock::PeripheralClockSpeed clock, Mode mode, PinSelection pin_selection) {
 		Clock::enablePeripheral(Clock::PeripheralPower::i2c_1_power);
 		Clock::setPeripheralClock(Clock::PeripheralClock::i2c_1_clock, clock);
 		uint32_t frequency = Clock::getPeripheralClockFrequency(Clock::PeripheralClock::i2c_1_clock);
-		System::Interrupt::enable(I2C1_IRQn);
 
 		uint32_t pin_sda = PIN(0, 19);
-		uint32_t pin_scl = PIN(0, 20);
 		if (pin_selection == I2C1::PinSelection::p0_0_and_p0_1) {
 			pin_sda = PIN(0, 0);
-			pin_scl = PIN(0, 1);
 		}
-		I2C::initialize(pin_sda, pin_scl, Pin::Function::alternate_3, frequency, mode_selection);
+		I2C::initialize(pin_sda, Pin::Function::alternate_3, frequency, mode);
+		Interrupt::enable(I2C1_IRQn);
 	}
 
 	/************************************
@@ -283,14 +281,13 @@ namespace System {
 		instance().handle();
 	}
 
-	void I2C2::initialize (Clock::PeripheralClockSpeed clock, ModeSelection mode_selection) {
+	void I2C2::initialize (Clock::PeripheralClockSpeed clock, Mode mode) {
 		Clock::enablePeripheral(Clock::PeripheralPower::i2c_2_power);
 		Clock::setPeripheralClock(Clock::PeripheralClock::i2c_2_clock, clock);
 		uint32_t frequency = Clock::getPeripheralClockFrequency(Clock::PeripheralClock::i2c_2_clock);
-		System::Interrupt::enable(I2C2_IRQn);
 
 		uint32_t pin_sda = PIN(0, 10);
-		uint32_t pin_scl = PIN(0, 11);
-		I2C::initialize(pin_sda, pin_scl, Pin::Function::alternate_2, frequency, mode_selection);
+		I2C::initialize(pin_sda, Pin::Function::alternate_2, frequency, mode);
+		Interrupt::enable(I2C2_IRQn);
 	}
 }

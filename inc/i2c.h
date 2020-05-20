@@ -15,7 +15,7 @@ namespace System {
 			standard,
 			fast_mode,
 			fast_mode_plus
-		} ModeSelection;
+		} Mode;
 
 	private:
 		LPC_I2C_TypeDef * _lpc_i2c;
@@ -28,7 +28,7 @@ namespace System {
 
 	protected:
 		I2C (uint32_t instance);
-		void initialize (uint32_t pin_sda, uint32_t pin_scl, System::Pin::Function function, uint32_t peripheral_frequency, ModeSelection mode_selection);
+		void initialize (uint32_t pin_sda, System::Pin::Function function, uint32_t peripheral_frequency, Mode mode);
 		void handle (void);
 
 	public:
@@ -49,7 +49,7 @@ namespace System {
 	public:
 		static I2C0 & instance (void);
 		void initialize (System::Clock::PeripheralClockSpeed clock = System::Clock::PeripheralClockSpeed::cpu_divide_by_4,
-						ModeSelection mode_selection = standard);
+						Mode mode = standard);
 	};
 
 	/************************************
@@ -71,7 +71,7 @@ namespace System {
 	public:
 		static I2C1 & instance (void);
 		void initialize (System::Clock::PeripheralClockSpeed clock = System::Clock::PeripheralClockSpeed::cpu_divide_by_4,
-						ModeSelection mode_selection = standard,
+						Mode mode = standard,
 						PinSelection pin_selection = p0_0_and_p0_1);
 	};
 
@@ -88,6 +88,6 @@ namespace System {
 	public:
 		static I2C2 & instance (void);
 		void initialize (System::Clock::PeripheralClockSpeed clock = System::Clock::PeripheralClockSpeed::cpu_divide_by_4,
-						ModeSelection mode_selection = standard);
+						Mode mode = standard);
 	};
 }
