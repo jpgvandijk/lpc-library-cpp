@@ -81,12 +81,8 @@ namespace System {
 
 		// Enable the UART interface
 		_lpc_uart->LCR = mode;
-		_lpc_uart->FCR = (1 << 0) | (1 << 1) | (1 << 2);
-		_lpc_uart->IER = (1 << 0) | (1 << 1);
-	}
-
-	void UART::handle (void) {
-
+		_lpc_uart->FCR = (1 << 2) | (1 << 1) | (1 << 0);
+		_lpc_uart->IER = (1 << 1); // FIXME: | (1 << 0);
 	}
 
 	uint8_t UART::mode (UART::CharacterLength character_length, UART::StopBits stop_bits, UART::Parity parity, bool enable_break_control) {
@@ -172,8 +168,58 @@ namespace System {
 		_lpc_uart->LCR &= ~(1 << 7);
 	}
 
-	void UART::write (uint8_t * tx_buffer, uint8_t tx_length) {
+	bool UART::isBusy (void)
+	{
+		return (busy || ((_lpc_uart->LSR & (1 << 5)) == 0));
+	}
 
+	bool UART::write (uint8_t * tx_buffer, uint8_t tx_length) {
+
+		// Check if a new transfer can be started
+		if (isBusy())
+			return false;
+		if (tx_length == 0)
+			return true;
+
+		// Set the first character, the rest is handled in the ISR
+		_lpc_uart->THR = *tx_buffer;
+		tx_buffer++;
+		tx_length--;
+
+		// Store all settings
+		this->tx_buffer = tx_buffer;
+		this->tx_length = tx_length;
+
+		// The transfer was successfully started
+		busy = true;
+		return true;
+	}
+
+	void UART::handle (void) {
+
+		// Handle each pending interrupt
+		uint32_t interrupt_status = _lpc_uart->IIR;
+		while ((interrupt_status & (1 << 0)) == 0) {
+
+			// Line status error
+			if ((interrupt_status & (7 << 1)) == (3 << 1)) {
+				volatile uint32_t error = _lpc_uart->LSR;
+			}
+
+			// Transmit buffer empty
+			if ((interrupt_status & (7 << 1)) == (1 << 1)) {
+				if (tx_length > 0) {
+					_lpc_uart->THR = *tx_buffer;
+					tx_buffer++;
+					tx_length--;
+				} else {
+					busy = false;
+				}
+			}
+
+			// Check for more interrupts
+			interrupt_status = _lpc_uart->IIR;
+		}
 	}
 }
 

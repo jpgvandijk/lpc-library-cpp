@@ -34,6 +34,9 @@ namespace System {
 
 	private:
 		LPC_UART_TypeDef * _lpc_uart;
+		volatile bool busy;
+		volatile uint8_t * tx_buffer;
+		volatile uint8_t tx_length;
 
 	protected:
 		UART (uint32_t instance);
@@ -43,7 +46,8 @@ namespace System {
 		void setBaudrate (uint32_t peripheral_frequency, uint32_t baudrate);
 
 	public:
-		void write (uint8_t * tx_buffer, uint8_t tx_length);
+		bool isBusy (void);
+		bool write (uint8_t * tx_buffer, uint8_t tx_length);
 	};
 
 	/************************************
