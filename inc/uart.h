@@ -2,6 +2,7 @@
 
 #include "pin.h"
 #include "clock.h"
+#include "dma.h"
 
 namespace System {
 
@@ -34,20 +35,39 @@ namespace System {
 
 	private:
 		LPC_UART_TypeDef * _lpc_uart;
-		volatile bool busy;
-		volatile uint8_t * tx_buffer;
-		volatile uint8_t tx_length;
+
+		// UART RX
+		DMA * _rx_dma_handle;
+		uint8_t * _rx_buffer;
+		uint16_t _rx_buffer_size;
+		uint16_t _rx_read_index;
+		uint16_t _rx_write_index;
+
+		// UART TX
+		DMA * _tx_dma_handle;
+		uint8_t * _tx_buffer;
+		volatile uint16_t _tx_length;
+		volatile bool _tx_busy;
 
 	protected:
 		UART (uint32_t instance);
 		void initialize (uint32_t pin_txd, Pin::Function function, uint32_t peripheral_frequency, uint32_t baudrate, uint8_t mode);
-		void handle (void);
 		uint8_t mode (CharacterLength character_length, StopBits stop_bits, Parity parity, bool enable_break_control);
 		void setBaudrate (uint32_t peripheral_frequency, uint32_t baudrate);
+		void handle (void);
 
 	public:
-		bool isBusy (void);
-		bool write (uint8_t * tx_buffer, uint8_t tx_length);
+
+		// UART RX (optionally with DMA)
+		void receive (uint8_t * rx_buffer, uint16_t rx_buffer_size);
+		void receive (uint8_t * rx_buffer, uint16_t rx_buffer_size, DMA & dma);
+		uint16_t bytesAvailable (void);
+		uint8_t getChar (void);
+
+		// UART TX (optionally with DMA)
+		bool transmit (uint8_t * tx_buffer, uint16_t tx_length);
+		bool transmit (uint8_t * tx_buffer, uint16_t tx_length, DMA & dma);
+		bool isTransmitting (void);
 	};
 
 	/************************************
