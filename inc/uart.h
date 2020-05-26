@@ -49,6 +49,10 @@ namespace System {
 		volatile uint16_t _tx_length;
 		volatile bool _tx_busy;
 
+	private:
+		virtual void configureReceiveDMA (DMA * dma) {};
+		virtual void configureTransmitDMA (DMA * dma) {};
+
 	protected:
 		UART (uint32_t instance);
 		void initialize (uint32_t pin_txd, Pin::Function function, uint32_t peripheral_frequency, uint32_t baudrate, uint8_t mode);
@@ -80,6 +84,8 @@ namespace System {
 		UART0 (UART0 const&) = delete;
 		void operator= (UART0 const&) = delete;
 		static void handleInterrupt (void);
+		void configureReceiveDMA (DMA * dma);
+		void configureTransmitDMA (DMA * dma);
 
 	public:
 		static UART0 & instance (void);
@@ -96,14 +102,29 @@ namespace System {
 	************************************/
 	class UART1 : public UART
 	{
+	public:
+		typedef enum {
+			p0_15_and_p0_16,
+			p2_0_and_p2_1,
+		} PinSelection;
+
 	private:
 		UART1 (void);
 		UART1 (UART1 const&) = delete;
 		void operator= (UART1 const&) = delete;
 		static void handleInterrupt (void);
+		void configureReceiveDMA (DMA * dma);
+		void configureTransmitDMA (DMA * dma);
+
 	public:
 		static UART1 & instance (void);
-		void initialize (System::Clock::PeripheralClockSpeed clock = System::Clock::PeripheralClockSpeed::cpu_divide_by_4);
+		void initialize (System::Clock::PeripheralClockSpeed clock = System::Clock::PeripheralClockSpeed::cpu_divide_by_4,
+				uint32_t baudrate = 9600,
+				UART::CharacterLength character_length = UART::CharacterLength::char_8b,
+				UART::StopBits stop_bits = UART::StopBits::stop_1,
+				UART::Parity parity = UART::Parity::none,
+				bool enable_break_control = false,
+				PinSelection pin_selection = p0_15_and_p0_16);
 	};
 
 	/************************************
@@ -111,14 +132,29 @@ namespace System {
 	************************************/
 	class UART2 : public UART
 	{
+	public:
+		typedef enum {
+			p0_10_and_p0_11,
+			p2_8_and_p2_9,
+		} PinSelection;
+
 	private:
 		UART2 (void);
 		UART2 (UART2 const&) = delete;
 		void operator= (UART2 const&) = delete;
 		static void handleInterrupt (void);
+		void configureReceiveDMA (DMA * dma);
+		void configureTransmitDMA (DMA * dma);
+
 	public:
 		static UART2 & instance (void);
-		void initialize (System::Clock::PeripheralClockSpeed clock = System::Clock::PeripheralClockSpeed::cpu_divide_by_4);
+		void initialize (System::Clock::PeripheralClockSpeed clock = System::Clock::PeripheralClockSpeed::cpu_divide_by_4,
+				uint32_t baudrate = 9600,
+				UART::CharacterLength character_length = UART::CharacterLength::char_8b,
+				UART::StopBits stop_bits = UART::StopBits::stop_1,
+				UART::Parity parity = UART::Parity::none,
+				bool enable_break_control = false,
+				PinSelection pin_selection = p0_10_and_p0_11);
 	};
 
 	/************************************
@@ -126,13 +162,29 @@ namespace System {
 	************************************/
 	class UART3 : public UART
 	{
+	public:
+		typedef enum {
+			p0_0_and_p0_1,
+			p0_25_and_p0_26,
+			p4_28_and_p4_29,
+		} PinSelection;
+
 	private:
 		UART3 (void);
 		UART3 (UART3 const&) = delete;
 		void operator= (UART3 const&) = delete;
 		static void handleInterrupt (void);
+		void configureReceiveDMA (DMA * dma);
+		void configureTransmitDMA (DMA * dma);
+
 	public:
 		static UART3 & instance (void);
-		void initialize (System::Clock::PeripheralClockSpeed clock = System::Clock::PeripheralClockSpeed::cpu_divide_by_4);
+		void initialize (System::Clock::PeripheralClockSpeed clock = System::Clock::PeripheralClockSpeed::cpu_divide_by_4,
+				uint32_t baudrate = 9600,
+				UART::CharacterLength character_length = UART::CharacterLength::char_8b,
+				UART::StopBits stop_bits = UART::StopBits::stop_1,
+				UART::Parity parity = UART::Parity::none,
+				bool enable_break_control = false,
+				PinSelection pin_selection = p0_0_and_p0_1);
 	};
 }

@@ -227,12 +227,7 @@ namespace System {
 		_lpc_uart->IER &= ~(1 << 0);
 
 		// Set up the DMA
-		_rx_dma_handle->configure(
-				DMA::TransferType::peripheral_to_memory,
-				DMA::Peripheral::uart0_rx, DMA::Peripheral::unused,  // FIXME: UART 0 hardcoded
-				DMA::BurstSize::transfer_1, DMA::BurstSize::transfer_1,
-				DMA::TransferWidth::byte, DMA::TransferWidth::byte,
-				false, true);
+		configureReceiveDMA(_rx_dma_handle);
 		_rx_dma_handle->transfer(&(_lpc_uart->RBR), _rx_buffer, _rx_buffer_size, true);
 	}
 
@@ -294,12 +289,7 @@ namespace System {
 		_tx_dma_handle = &dma;
 
 		// Start DMA transfer
-		_tx_dma_handle->configure(
-				DMA::TransferType::memory_to_peripheral,
-				DMA::Peripheral::unused, DMA::Peripheral::uart0_tx,  // FIXME: UART 0 hardcoded
-				DMA::BurstSize::transfer_1, DMA::BurstSize::transfer_1,
-				DMA::TransferWidth::byte, DMA::TransferWidth::byte,
-				true, false);
+		configureTransmitDMA(_tx_dma_handle);
 		_tx_dma_handle->transfer(tx_buffer, &(_lpc_uart->THR), tx_length, false);
 
 		// The transfer was successfully started
@@ -333,6 +323,24 @@ void UART0::handleInterrupt (void) {
 	instance().handle();
 }
 
+void UART0::configureReceiveDMA (DMA * dma) {
+	dma->configure(
+			DMA::TransferType::peripheral_to_memory,
+			DMA::Peripheral::uart0_rx, DMA::Peripheral::unused,
+			DMA::BurstSize::transfer_1, DMA::BurstSize::transfer_1,
+			DMA::TransferWidth::byte, DMA::TransferWidth::byte,
+			false, true);
+}
+
+void UART0::configureTransmitDMA (DMA * dma) {
+	dma->configure(
+			DMA::TransferType::memory_to_peripheral,
+			DMA::Peripheral::unused, DMA::Peripheral::uart0_tx,
+			DMA::BurstSize::transfer_1, DMA::BurstSize::transfer_1,
+			DMA::TransferWidth::byte, DMA::TransferWidth::byte,
+			true, false);
+}
+
 void UART0::initialize (Clock::PeripheralClockSpeed clock, uint32_t baudrate, UART::CharacterLength character_length, UART::StopBits stop_bits, UART::Parity parity, bool enable_break_control) {
 	Clock::enablePeripheral(Clock::PeripheralPower::uart_0_power);
 	Clock::setPeripheralClock(Clock::PeripheralClock::uart_0_clock, clock);
@@ -344,16 +352,161 @@ void UART0::initialize (Clock::PeripheralClockSpeed clock, uint32_t baudrate, UA
 	System::Interrupt::enable(UART0_IRQn);
 }
 
+/************************************
+* UART1 Singleton					*
+************************************/
 
+UART1 & UART1::instance (void) {
+	static UART1 uart;
+	return uart;
+}
 
-// alt 2 or alt 3 or alt 3
-// TXD3: P0.0 or 0.25 or 4.28
-// RXD3: P0.1 or 0.26 or 4.29
+UART1::UART1 (void) : UART(1) {
+	handleInterruptPointer[1] = handleInterrupt;
+}
 
-// alt 1 or alt 2
-// TXD2: P0.10 or 2.8
-// RXD2: P0.11 or 2.9
+void UART1::handleInterrupt (void) {
+	instance().handle();
+}
 
-// alt 1 or alt 2
-// TXD1: P0.15 or 2.0
-// RXD1: P0.16 or 2.1
+void UART1::configureReceiveDMA (DMA * dma) {
+	dma->configure(
+			DMA::TransferType::peripheral_to_memory,
+			DMA::Peripheral::uart1_rx, DMA::Peripheral::unused,
+			DMA::BurstSize::transfer_1, DMA::BurstSize::transfer_1,
+			DMA::TransferWidth::byte, DMA::TransferWidth::byte,
+			false, true);
+}
+
+void UART1::configureTransmitDMA (DMA * dma) {
+	dma->configure(
+			DMA::TransferType::memory_to_peripheral,
+			DMA::Peripheral::unused, DMA::Peripheral::uart1_tx,
+			DMA::BurstSize::transfer_1, DMA::BurstSize::transfer_1,
+			DMA::TransferWidth::byte, DMA::TransferWidth::byte,
+			true, false);
+}
+
+void UART1::initialize (Clock::PeripheralClockSpeed clock, uint32_t baudrate, UART::CharacterLength character_length, UART::StopBits stop_bits, UART::Parity parity, bool enable_break_control, PinSelection pin_selection) {
+	Clock::enablePeripheral(Clock::PeripheralPower::uart_1_power);
+	Clock::setPeripheralClock(Clock::PeripheralClock::uart_1_clock, clock);
+	uint32_t frequency = Clock::getPeripheralClockFrequency(Clock::PeripheralClock::uart_1_clock);
+
+	uint32_t pin_txd = PIN(0, 15);
+	Pin::Function pin_function = Pin::Function::alternate_1;
+	if (pin_selection == UART1::PinSelection::p2_0_and_p2_1) {
+		pin_txd = PIN(2, 0);
+		pin_function = Pin::Function::alternate_2;
+	}
+
+	uint8_t mode = UART::mode(character_length, stop_bits, parity, enable_break_control);
+	UART::initialize(pin_txd, pin_function, frequency, baudrate, mode);
+	System::Interrupt::enable(UART1_IRQn);
+}
+
+/************************************
+* UART2 Singleton					*
+************************************/
+
+UART2 & UART2::instance (void) {
+	static UART2 uart;
+	return uart;
+}
+
+UART2::UART2 (void) : UART(2) {
+	handleInterruptPointer[2] = handleInterrupt;
+}
+
+void UART2::handleInterrupt (void) {
+	instance().handle();
+}
+
+void UART2::configureReceiveDMA (DMA * dma) {
+	dma->configure(
+			DMA::TransferType::peripheral_to_memory,
+			DMA::Peripheral::uart2_rx, DMA::Peripheral::unused,
+			DMA::BurstSize::transfer_1, DMA::BurstSize::transfer_1,
+			DMA::TransferWidth::byte, DMA::TransferWidth::byte,
+			false, true);
+}
+
+void UART2::configureTransmitDMA (DMA * dma) {
+	dma->configure(
+			DMA::TransferType::memory_to_peripheral,
+			DMA::Peripheral::unused, DMA::Peripheral::uart2_tx,
+			DMA::BurstSize::transfer_1, DMA::BurstSize::transfer_1,
+			DMA::TransferWidth::byte, DMA::TransferWidth::byte,
+			true, false);
+}
+
+void UART2::initialize (Clock::PeripheralClockSpeed clock, uint32_t baudrate, UART::CharacterLength character_length, UART::StopBits stop_bits, UART::Parity parity, bool enable_break_control, PinSelection pin_selection) {
+	Clock::enablePeripheral(Clock::PeripheralPower::uart_2_power);
+	Clock::setPeripheralClock(Clock::PeripheralClock::uart_2_clock, clock);
+	uint32_t frequency = Clock::getPeripheralClockFrequency(Clock::PeripheralClock::uart_2_clock);
+
+	uint32_t pin_txd = PIN(0, 10);
+	Pin::Function pin_function = Pin::Function::alternate_1;
+	if (pin_selection == UART2::PinSelection::p2_8_and_p2_9) {
+		pin_txd = PIN(2, 8);
+		pin_function = Pin::Function::alternate_2;
+	}
+
+	uint8_t mode = UART::mode(character_length, stop_bits, parity, enable_break_control);
+	UART::initialize(pin_txd, pin_function, frequency, baudrate, mode);
+	System::Interrupt::enable(UART2_IRQn);
+}
+
+/************************************
+* UART3 Singleton					*
+************************************/
+
+UART3 & UART3::instance (void) {
+	static UART3 uart;
+	return uart;
+}
+
+UART3::UART3 (void) : UART(3) {
+	handleInterruptPointer[3] = handleInterrupt;
+}
+
+void UART3::handleInterrupt (void) {
+	instance().handle();
+}
+
+void UART3::configureReceiveDMA (DMA * dma) {
+	dma->configure(
+			DMA::TransferType::peripheral_to_memory,
+			DMA::Peripheral::uart3_rx, DMA::Peripheral::unused,
+			DMA::BurstSize::transfer_1, DMA::BurstSize::transfer_1,
+			DMA::TransferWidth::byte, DMA::TransferWidth::byte,
+			false, true);
+}
+
+void UART3::configureTransmitDMA (DMA * dma) {
+	dma->configure(
+			DMA::TransferType::memory_to_peripheral,
+			DMA::Peripheral::unused, DMA::Peripheral::uart3_tx,
+			DMA::BurstSize::transfer_1, DMA::BurstSize::transfer_1,
+			DMA::TransferWidth::byte, DMA::TransferWidth::byte,
+			true, false);
+}
+
+void UART3::initialize (Clock::PeripheralClockSpeed clock, uint32_t baudrate, UART::CharacterLength character_length, UART::StopBits stop_bits, UART::Parity parity, bool enable_break_control, PinSelection pin_selection) {
+	Clock::enablePeripheral(Clock::PeripheralPower::uart_3_power);
+	Clock::setPeripheralClock(Clock::PeripheralClock::uart_3_clock, clock);
+	uint32_t frequency = Clock::getPeripheralClockFrequency(Clock::PeripheralClock::uart_3_clock);
+
+	uint32_t pin_txd = PIN(0, 0);
+	Pin::Function pin_function = Pin::Function::alternate_2;
+	if (pin_selection == UART3::PinSelection::p0_25_and_p0_26) {
+		pin_txd = PIN(0, 25);
+		pin_function = Pin::Function::alternate_3;
+	} else if (pin_selection == UART3::PinSelection::p4_28_and_p4_29) {
+		pin_txd = PIN(4, 28);
+		pin_function = Pin::Function::alternate_3;
+	}
+
+	uint8_t mode = UART::mode(character_length, stop_bits, parity, enable_break_control);
+	UART::initialize(pin_txd, pin_function, frequency, baudrate, mode);
+	System::Interrupt::enable(UART3_IRQn);
+}

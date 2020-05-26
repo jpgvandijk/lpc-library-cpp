@@ -64,7 +64,7 @@ void test_clock_time_pin (void) {
 * UART, DMA
 ***************************************************/
 
-void test_uart_dma (void) {
+void test_uart0_dma (void) {
 	init();
 
 	// The use of DMA is optional (the last argument in receive() and transmit() should be removed to not use the DMA)
@@ -93,6 +93,40 @@ void test_uart_dma (void) {
 				tx_buffer[i] = UART0::instance().getChar();
 			}
 			UART0::instance().transmit(tx_buffer, bytes_available, DMAChannel<DMA::ch_1>::instance());
+		}
+
+		// Pause, so we can accumulate data in the receive ring buffer
+		Time::delay(200);
+	}
+}
+
+void test_uart1 (void) {
+	init();
+	UART1::instance().initialize(System::Clock::PeripheralClockSpeed::cpu_divide_by_1,
+			115200, UART::CharacterLength::char_8b, UART::StopBits::stop_1, UART::Parity::none, false);
+
+	// Receive
+	uint8_t rx_buffer[16];
+	UART1::instance().receive(rx_buffer, sizeof(rx_buffer));
+
+	// Transmit
+	uint8_t tx_buffer[] = "Hello World!\r\n";
+	UART1::instance().transmit(tx_buffer, sizeof(tx_buffer));
+
+	while (true) {
+
+		// Make sure not to overwrite the TX buffer while still transmitting
+		while (UART1::instance().isTransmitting()) {}
+
+		// Data available?
+		uint32_t bytes_available = UART1::instance().bytesAvailable();
+		if (bytes_available != 0) {
+
+			// Echo
+			for (uint32_t i = 0; i < bytes_available; i++) {
+				tx_buffer[i] = UART1::instance().getChar();
+			}
+			UART1::instance().transmit(tx_buffer, bytes_available);
 		}
 
 		// Pause, so we can accumulate data in the receive ring buffer
@@ -165,7 +199,8 @@ void test_i2c1 (void) {
 int main(void) {
 
 	//test_clock_time_pin();
-	//test_uart_dma();
+	//test_uart0_dma();
+	test_uart1();
 	//test_i2c0();
 	//test_i2c1();
 
