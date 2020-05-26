@@ -91,8 +91,7 @@ namespace System {
 		_lpc_i2c->I2CONSET = (1 << 6);
 	}
 
-	bool I2C::isBusy (void)
-	{
+	bool I2C::isBusy (void) {
 		return (busy || (_lpc_i2c->I2STAT != 0xF8));
 	}
 
