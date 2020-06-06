@@ -55,7 +55,7 @@ namespace System {
 
 	protected:
 		UART (uint32_t instance);
-		void initialize (uint32_t pin_txd, Pin::Function function, uint32_t peripheral_frequency, uint32_t baudrate, uint8_t mode);
+		void initialize (uint32_t pin_txd_index, GPIO::Function function, uint32_t peripheral_frequency, uint32_t baudrate, uint8_t mode);
 		uint8_t mode (CharacterLength character_length, StopBits stop_bits, Parity parity, bool enable_break_control);
 		void setBaudrate (uint32_t peripheral_frequency, uint32_t baudrate);
 		void handle (void);

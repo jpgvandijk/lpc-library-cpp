@@ -8,6 +8,10 @@
 #include "uart.h"
 #include "dma.h"
 #include "i2c.h"
+#include "spi.h"
+#include "io_extender.h"
+#include "mcp23017.h"
+#include "sst25lf020.h"
 
 // Namespaces
 using namespace System;
@@ -25,11 +29,13 @@ void init (void) {
 
 void blink (void) {
 
+	GPIOPin pin(PIN(0, 22));
+
 	// Quickly blink 5 times, then pause
 	for (uint32_t i = 0; i < 5; i++) {
-		Pin::set(PIN(0, 22));
+		pin.set();
 		Time::delay(25);
-		Pin::clear(PIN(0, 22));
+		pin.clear();
 		Time::delay(25);
 	}
 	Time::delay(200);
@@ -38,7 +44,8 @@ void blink (void) {
 void test_clock_time_pin (void) {
 
 	// Simple GPIO blinky
-	Pin::setDirection(PIN(0, 22), Pin::Direction::output);
+	GPIOPin pin(PIN(0, 22));
+	pin.setDirection(Pin::Direction::output);
 
 	// Verify time/delay while changing the CPU frequency
 	Time::start();
@@ -196,13 +203,75 @@ void test_i2c1 (void) {
 	while (I2C1::instance().isBusy()) {}
 }
 
+/***************************************************
+* SPI
+***************************************************/
+
+uint16_t test_spi0 (void) {
+	init();
+
+	// Initialize SPI0 with correct settings for the FLASH memory
+	SPI0::instance().initialize(System::Clock::PeripheralClockSpeed::cpu_divide_by_1, 1000000, // FIXME: SST25LF020::getMaximumClockFrequency(),
+			8, SST25LF020::isCPHA(), SST25LF020::isCPOL(), SST25LF020::isLSBFirst());
+
+	// Instantiate the FLASH memory
+	GPIOPin ss_pin(PIN(0, 1));
+	SST25LF020 externalFlash = SST25LF020(SPI0::instance(), ss_pin);
+
+	uint16_t ID = externalFlash.readID();
+
+	return ID;
+}
+
+void test_ssp1 (void) {
+	init();
+
+	// Initialize SPI0
+	SSP1::instance().initialize();
+
+	// Write 6 bytes
+	uint8_t tx_buffer[] = {0x00, 0x00, 0x31, 0x32, 0x33, 0x34};
+	SSP1::instance().transmit(tx_buffer, sizeof(tx_buffer));
+	while (SSP1::instance().isBusy()) {}
+}
+
+/***************************************************
+* IO Extender
+***************************************************/
+
+void blink (Pin & pin) {
+	while(1) {
+		pin.set();
+		pin.clear();
+	}
+}
+
+void test_io_extender (void) {
+	init();
+
+	// I/O Extender MCP23017 over I2C0 at 1 MHz
+	I2C0::instance().initialize(Clock::PeripheralClockSpeed::cpu_divide_by_2, I2C::Mode::fast_mode_plus);
+	MCP23017 i2c_io_extender(I2C0::instance(), 0x4E);
+
+	IOExtenderPin pin_test(i2c_io_extender, PIN(0, 0));
+	pin_test.setDirection(Pin::Direction::output);
+	blink(pin_test);
+}
+
+/***************************************************
+* Main
+***************************************************/
+
 int main(void) {
 
-	//test_clock_time_pin();
-	//test_uart0_dma();
+	test_clock_time_pin();
+	test_uart0_dma();
 	test_uart1();
-	//test_i2c0();
-	//test_i2c1();
+	test_i2c0();
+	test_i2c1();
+	test_spi0();
+	test_ssp1();
+	test_io_extender();
 
     return 0;
 }

@@ -68,18 +68,19 @@ namespace System {
 		_tx_busy = false;
 	}
 
-	void UART::initialize (uint32_t pin_txd, Pin::Function function, uint32_t peripheral_frequency, uint32_t baudrate, uint8_t mode) {
+	void UART::initialize (uint32_t pin_txd_index, GPIO::Function function, uint32_t peripheral_frequency, uint32_t baudrate, uint8_t mode) {
 
 		// Init TXD pin
-		Pin::setFunction(pin_txd, function);
-		Pin::setPullMode(pin_txd, Pin::PullMode::no_pull);
-		Pin::setOpenDrain(pin_txd, false);
+		GPIOPin pin_txd(pin_txd_index);
+		pin_txd.setFunction(function);
+		pin_txd.setPullMode(Pin::PullMode::no_pull);
+		pin_txd.setOpenDrain(false);
 
 		// Init SCL pin
-		uint32_t pin_rxd = pin_txd + 1;
-		Pin::setFunction(pin_rxd, function);
-		Pin::setPullMode(pin_rxd, Pin::PullMode::no_pull);
-		Pin::setOpenDrain(pin_rxd, false);
+		GPIOPin pin_rxd(pin_txd_index + 1);
+		pin_rxd.setFunction(function);
+		pin_rxd.setPullMode(Pin::PullMode::no_pull);
+		pin_rxd.setOpenDrain(false);
 
 		// Set the desired baudrate
 		setBaudrate(peripheral_frequency, baudrate);
@@ -348,7 +349,7 @@ void UART0::initialize (Clock::PeripheralClockSpeed clock, uint32_t baudrate, UA
 
 	uint32_t pin_txd = PIN(0, 2);
 	uint8_t mode = UART::mode(character_length, stop_bits, parity, enable_break_control);
-	UART::initialize(pin_txd, Pin::Function::alternate_1, frequency, baudrate, mode);
+	UART::initialize(pin_txd, GPIO::Function::alternate_1, frequency, baudrate, mode);
 	System::Interrupt::enable(UART0_IRQn);
 }
 
@@ -393,10 +394,10 @@ void UART1::initialize (Clock::PeripheralClockSpeed clock, uint32_t baudrate, UA
 	uint32_t frequency = Clock::getPeripheralClockFrequency(Clock::PeripheralClock::uart_1_clock);
 
 	uint32_t pin_txd = PIN(0, 15);
-	Pin::Function pin_function = Pin::Function::alternate_1;
+	GPIO::Function pin_function = GPIO::Function::alternate_1;
 	if (pin_selection == UART1::PinSelection::p2_0_and_p2_1) {
 		pin_txd = PIN(2, 0);
-		pin_function = Pin::Function::alternate_2;
+		pin_function = GPIO::Function::alternate_2;
 	}
 
 	uint8_t mode = UART::mode(character_length, stop_bits, parity, enable_break_control);
@@ -445,10 +446,10 @@ void UART2::initialize (Clock::PeripheralClockSpeed clock, uint32_t baudrate, UA
 	uint32_t frequency = Clock::getPeripheralClockFrequency(Clock::PeripheralClock::uart_2_clock);
 
 	uint32_t pin_txd = PIN(0, 10);
-	Pin::Function pin_function = Pin::Function::alternate_1;
+	GPIO::Function pin_function = GPIO::Function::alternate_1;
 	if (pin_selection == UART2::PinSelection::p2_8_and_p2_9) {
 		pin_txd = PIN(2, 8);
-		pin_function = Pin::Function::alternate_2;
+		pin_function = GPIO::Function::alternate_2;
 	}
 
 	uint8_t mode = UART::mode(character_length, stop_bits, parity, enable_break_control);
@@ -497,13 +498,13 @@ void UART3::initialize (Clock::PeripheralClockSpeed clock, uint32_t baudrate, UA
 	uint32_t frequency = Clock::getPeripheralClockFrequency(Clock::PeripheralClock::uart_3_clock);
 
 	uint32_t pin_txd = PIN(0, 0);
-	Pin::Function pin_function = Pin::Function::alternate_2;
+	GPIO::Function pin_function = GPIO::Function::alternate_2;
 	if (pin_selection == UART3::PinSelection::p0_25_and_p0_26) {
 		pin_txd = PIN(0, 25);
-		pin_function = Pin::Function::alternate_3;
+		pin_function = GPIO::Function::alternate_3;
 	} else if (pin_selection == UART3::PinSelection::p4_28_and_p4_29) {
 		pin_txd = PIN(4, 28);
-		pin_function = Pin::Function::alternate_3;
+		pin_function = GPIO::Function::alternate_3;
 	}
 
 	uint8_t mode = UART::mode(character_length, stop_bits, parity, enable_break_control);

@@ -56,18 +56,19 @@ namespace System {
 		busy = false;
 	}
 
-	void I2C::initialize (uint32_t pin_sda, Pin::Function function, uint32_t peripheral_frequency, Mode mode) {
+	void I2C::initialize (uint32_t pin_sda_index, GPIO::Function function, uint32_t peripheral_frequency, Mode mode) {
 
 		// Init SDA pin
-		Pin::setFunction(pin_sda, function);
-		Pin::setPullMode(pin_sda, Pin::PullMode::no_pull);
-		Pin::setOpenDrain(pin_sda, true);
+		GPIOPin pin_sda(pin_sda_index);
+		pin_sda.setFunction(function);
+		pin_sda.setPullMode(Pin::PullMode::no_pull);
+		pin_sda.setOpenDrain(true);
 
 		// Init SCL pin
-		uint32_t pin_scl = pin_sda + 1;
-		Pin::setFunction(pin_scl, function);
-		Pin::setPullMode(pin_scl, Pin::PullMode::no_pull);
-		Pin::setOpenDrain(pin_scl, true);
+		GPIOPin pin_scl = GPIOPin(pin_sda_index + 1);
+		pin_scl.setFunction(function);
+		pin_scl.setPullMode(Pin::PullMode::no_pull);
+		pin_scl.setOpenDrain(true);
 
 		// Determine the total clock divider
 		uint32_t bus_frequency = 100000;
@@ -229,7 +230,7 @@ namespace System {
 		} else {
 			LPC_PINCON->I2CPADCFG = 0x00;
 		}
-		I2C::initialize(pin_sda, Pin::Function::alternate_1, frequency, mode);
+		I2C::initialize(pin_sda, GPIO::Function::alternate_1, frequency, mode);
 		Interrupt::enable(I2C0_IRQn);
 	}
 
@@ -259,7 +260,7 @@ namespace System {
 		if (pin_selection == I2C1::PinSelection::p0_0_and_p0_1) {
 			pin_sda = PIN(0, 0);
 		}
-		I2C::initialize(pin_sda, Pin::Function::alternate_3, frequency, mode);
+		I2C::initialize(pin_sda, GPIO::Function::alternate_3, frequency, mode);
 		Interrupt::enable(I2C1_IRQn);
 	}
 
@@ -286,7 +287,7 @@ namespace System {
 		uint32_t frequency = Clock::getPeripheralClockFrequency(Clock::PeripheralClock::i2c_2_clock);
 
 		uint32_t pin_sda = PIN(0, 10);
-		I2C::initialize(pin_sda, Pin::Function::alternate_2, frequency, mode);
+		I2C::initialize(pin_sda, GPIO::Function::alternate_2, frequency, mode);
 		Interrupt::enable(I2C2_IRQn);
 	}
 }

@@ -6,9 +6,12 @@
 // Namespaces
 using namespace System;
 
-namespace System::Pin {
+namespace System {
 
-	void setFunction (uint32_t pin, Pin::Function function) {
+	Pin::Pin (uint32_t pin) : _pin(pin) {
+	}
+
+	void GPIO::setFunction (uint32_t pin, GPIO::Function function) {
 		if (pin > PIN(4, 31)) {
 			return;
 		}
@@ -20,7 +23,7 @@ namespace System::Pin {
 		LPC_PINSEL[index] = (LPC_PINSEL[index] & ~(0x03 << pin)) | (((uint32_t) function) << pin);
 	}
 
-	void setPullMode (uint32_t pin, Pin::PullMode mode) {
+	void GPIO::setPullMode (uint32_t pin, Pin::PullMode mode) {
 		if (pin > PIN(4, 31)) {
 			return;
 		}
@@ -32,7 +35,7 @@ namespace System::Pin {
 		LPC_PINMODE[index] = (LPC_PINMODE[index] & ~(0x03 << pin)) | (((uint32_t) mode) << pin);
 	}
 
-	void setOpenDrain (uint32_t pin, bool open_drain) {
+	void GPIO::setOpenDrain (uint32_t pin, bool open_drain) {
 		if (pin > PIN(4, 31)) {
 			return;
 		}
@@ -47,7 +50,7 @@ namespace System::Pin {
 		}
 	}
 
-	void setDirection (uint32_t pin, Pin::Direction direction) {
+	void GPIO::setDirection (uint32_t pin, Pin::Direction direction) {
 		if (pin > PIN(4, 31)) {
 			return;
 		}
@@ -61,7 +64,7 @@ namespace System::Pin {
 		}
 	}
 
-	void set (uint32_t pin) {
+	void GPIO::set (uint32_t pin) {
 		if (pin > PIN(4, 31)) {
 			return;
 		}
@@ -71,7 +74,7 @@ namespace System::Pin {
 		LPC_GPIO->FIOSET = (1 << pin);
 	}
 
-	void clear (uint32_t pin) {
+	void GPIO::clear (uint32_t pin) {
 		if (pin > PIN(4, 31)) {
 			return;
 		}
@@ -81,7 +84,7 @@ namespace System::Pin {
 		LPC_GPIO->FIOCLR = (1 << pin);
 	}
 
-	void write (uint32_t pin, Pin::Level level) {
+	void GPIO::write (uint32_t pin, Pin::Level level) {
 		if (pin > PIN(4, 31)) {
 			return;
 		}
@@ -96,7 +99,7 @@ namespace System::Pin {
 		}
 	}
 
-	void write (uint32_t pin_lsb, uint32_t mask, uint32_t value) {
+	void GPIO::writePort (uint32_t pin_lsb, uint32_t mask, uint32_t value) {
 		if (pin_lsb > PIN(4, 31)) {
 			return;
 		}
@@ -107,7 +110,7 @@ namespace System::Pin {
 		LPC_GPIO->FIOMASK = 0;
 	}
 
-	void writeByte (uint32_t pin_lsb, uint8_t value) {
+	void GPIO::writeByte (uint32_t pin_lsb, uint8_t value) {
 		if (pin_lsb > PIN(4, 31)) {
 			return;
 		}
@@ -124,7 +127,7 @@ namespace System::Pin {
 		}
 	}
 
-	void writeHalfword (uint32_t pin_lsb, uint16_t value) {
+	void GPIO::writeHalfword (uint32_t pin_lsb, uint16_t value) {
 		if (pin_lsb > PIN(4, 31)) {
 			return;
 		}
@@ -137,7 +140,7 @@ namespace System::Pin {
 		}
 	}
 
-	Pin::Level read (uint32_t pin) {
+	Pin::Level GPIO::read (uint32_t pin) {
 		if (pin > PIN(4, 31)) {
 			return Pin::Level::low;
 		}
@@ -151,130 +154,165 @@ namespace System::Pin {
 		}
 	}
 
-	namespace ExternalInterrupt {
+	GPIOPin::GPIOPin (uint32_t pin) : Pin(pin) {
+	}
 
-		void configure (uint32_t pin, Mode mode, Polarity polarity) {
-			if ((pin < PIN(2, 10)) || (pin > PIN(2, 13)))
-				return;
+	void GPIOPin::setFunction (GPIO::Function function) {
+		GPIO::setFunction(_pin, function);
+	}
 
-			setFunction(pin, Pin::Function::alternate_1);
-			setDirection(pin, Pin::Direction::input);
+	void GPIOPin::setDirection (Pin::Direction direction) {
+		GPIO::setDirection(_pin, direction);
+	}
 
-			uint32_t interrupt = (pin & 0x1F) - 10;
-			if (mode == Pin::ExternalInterrupt::Mode::level) {
-				LPC_SC->EXTMODE &= ~(1 << interrupt);
+	void GPIOPin::setPullMode (Pin::PullMode mode) {
+		GPIO::setPullMode(_pin, mode);
+	}
+
+	void GPIOPin::setOpenDrain (bool open_drain) {
+		GPIO::setOpenDrain(_pin, open_drain);
+	}
+
+	void GPIOPin::set (void) {
+		GPIO::set(_pin);
+	}
+
+	void GPIOPin::clear (void) {
+		GPIO::clear(_pin);
+	}
+
+	void GPIOPin::write (Pin::Level level) {
+		GPIO::write(_pin, level);
+	}
+
+	Pin::Level GPIOPin::read (void) {
+		return GPIO::read(_pin);
+	}
+
+	ExternalInterruptPin::ExternalInterruptPin (uint32_t pin) : GPIOPin(pin) {
+	}
+
+	void ExternalInterruptPin::enable (Mode mode, Polarity polarity) {
+		if ((_pin < PIN(2, 10)) || (_pin > PIN(2, 13)))
+			return;
+
+		setFunction(GPIO::Function::alternate_1);
+		setDirection(Pin::Direction::input);
+
+		uint32_t interrupt = (_pin & 0x1F) - 10;
+		if (mode == ExternalInterruptPin::Mode::level) {
+			LPC_SC->EXTMODE &= ~(1 << interrupt);
+		} else {
+			LPC_SC->EXTMODE |= (1 << interrupt);
+		}
+
+		if (polarity == ExternalInterruptPin::Polarity::low) {
+			LPC_SC->EXTPOLAR &= ~(1 << interrupt);
+		} else {
+			LPC_SC->EXTPOLAR |= (1 << interrupt);
+		}
+
+		Interrupt::enable(IRQn_Type ((uint32_t) EINT0_IRQn + interrupt));
+	}
+
+	void ExternalInterruptPin::disable (void) {
+		if ((_pin < PIN(2, 10)) || (_pin > PIN(2, 13)))
+			return;
+
+		uint32_t interrupt = (_pin & 0x1F) - 10;
+		Interrupt::disable(IRQn_Type ((uint32_t) EINT0_IRQn + interrupt));
+		setFunction(GPIO::Function::gpio);
+	}
+
+	bool ExternalInterruptPin::isFlagged (void) {
+		if ((_pin < PIN(2, 10)) || (_pin > PIN(2, 13)))
+			return false;
+
+		uint32_t interrupt = (_pin & 0x1F) - 10;
+		return ((LPC_SC->EXTINT & (1 << interrupt)) != 0);
+	}
+
+	void ExternalInterruptPin::clearFlag (void) {
+		if ((_pin < PIN(2, 10)) || (_pin > PIN(2, 13)))
+			return;
+
+		uint32_t interrupt = (_pin & 0x1F) - 10;
+		LPC_SC->EXTINT |= (1 << interrupt);
+	}
+
+	GPIOInterruptPin::GPIOInterruptPin (uint32_t pin) : GPIOPin(pin) {
+	}
+
+	void GPIOInterruptPin::enable (void) {
+		Interrupt::enable(EINT3_IRQn);
+	}
+
+	void GPIOInterruptPin::disable (void) {
+		Interrupt::disable(EINT3_IRQn);
+	}
+
+	void GPIOInterruptPin::enable (Polarity polarity) {
+		if ((_pin >= PIN(0, 0)) && (_pin <= PIN(0, 31))) {
+			uint32_t pin = _pin & 0x1F;
+			if (polarity == GPIOInterruptPin::Polarity::rising) {
+				LPC_GPIOINT->IO0IntEnR |= (1 << pin);
 			} else {
-				LPC_SC->EXTMODE |= (1 << interrupt);
+				LPC_GPIOINT->IO0IntEnF |= (1 << pin);
 			}
-
-			if (polarity == Pin::ExternalInterrupt::Polarity::low) {
-				LPC_SC->EXTPOLAR &= ~(1 << interrupt);
+		} else if ((_pin >= PIN(2, 0)) && (_pin <= PIN(2, 31))) {
+			uint32_t pin = _pin & 0x1F;
+			if (polarity == GPIOInterruptPin::Polarity::rising) {
+				LPC_GPIOINT->IO2IntEnR |= (1 << pin);
 			} else {
-				LPC_SC->EXTPOLAR |= (1 << interrupt);
+				LPC_GPIOINT->IO2IntEnF |= (1 << pin);
 			}
-
-			Interrupt::enable(IRQn_Type ((uint32_t) EINT0_IRQn + interrupt));
-		}
-
-		void disable (uint32_t pin) {
-			if ((pin < PIN(2, 10)) || (pin > PIN(2, 13)))
-				return;
-
-			uint32_t interrupt = (pin & 0x1F) - 10;
-			Interrupt::disable(IRQn_Type ((uint32_t) EINT0_IRQn + interrupt));
-			setFunction(pin, Pin::Function::gpio);
-		}
-
-		bool isFlagged (uint32_t pin) {
-			if ((pin < PIN(2, 10)) || (pin > PIN(2, 13)))
-				return false;
-
-			uint32_t interrupt = (pin & 0x1F) - 10;
-			return ((LPC_SC->EXTINT & (1 << interrupt)) != 0);
-		}
-
-		void clearFlag (uint32_t pin) {
-			if ((pin < PIN(2, 10)) || (pin > PIN(2, 13)))
-				return;
-
-			uint32_t interrupt = (pin & 0x1F) - 10;
-			LPC_SC->EXTINT |= (1 << interrupt);
 		}
 	}
 
-	namespace GPIOInterrupt {
-
-		void enable (void) {
-			Interrupt::enable(EINT3_IRQn);
-		}
-
-		void disable (void) {
-			Interrupt::disable(EINT3_IRQn);
-		}
-
-		void enable (uint32_t pin, Polarity polarity) {
-			if ((pin >= PIN(0, 0)) && (pin <= PIN(0, 31))) {
-				pin = pin & 0x1F;
-				if (polarity == Pin::GPIOInterrupt::Polarity::rising) {
-					LPC_GPIOINT->IO0IntEnR |= (1 << pin);
-				} else {
-					LPC_GPIOINT->IO0IntEnF |= (1 << pin);
-				}
-			} else if ((pin >= PIN(2, 0)) && (pin <= PIN(2, 31))) {
-				pin = pin & 0x1F;
-				if (polarity == Pin::GPIOInterrupt::Polarity::rising) {
-					LPC_GPIOINT->IO2IntEnR |= (1 << pin);
-				} else {
-					LPC_GPIOINT->IO2IntEnF |= (1 << pin);
-				}
+	void GPIOInterruptPin::disable (Polarity polarity) {
+		if ((_pin >= PIN(0, 0)) && (_pin <= PIN(0, 31))) {
+			uint32_t pin = _pin & 0x1F;
+			if (polarity == GPIOInterruptPin::Polarity::rising) {
+				LPC_GPIOINT->IO0IntEnR &= ~(1 << pin);
+			} else {
+				LPC_GPIOINT->IO0IntEnF &= ~(1 << pin);
+			}
+		} else if ((_pin >= PIN(2, 0)) && (_pin <= PIN(2, 31))) {
+			uint32_t pin = _pin & 0x1F;
+			if (polarity == GPIOInterruptPin::Polarity::rising) {
+				LPC_GPIOINT->IO2IntEnR &= ~(1 << pin);
+			} else {
+				LPC_GPIOINT->IO2IntEnF &= ~(1 << pin);
 			}
 		}
+	}
 
-		void disable (uint32_t pin, Polarity polarity) {
-			if ((pin >= PIN(0, 0)) && (pin <= PIN(0, 31))) {
-				pin = pin & 0x1F;
-				if (polarity == Pin::GPIOInterrupt::Polarity::rising) {
-					LPC_GPIOINT->IO0IntEnR &= ~(1 << pin);
-				} else {
-					LPC_GPIOINT->IO0IntEnF &= ~(1 << pin);
-				}
-			} else if ((pin >= PIN(2, 0)) && (pin <= PIN(2, 31))) {
-				pin = pin & 0x1F;
-				if (polarity == Pin::GPIOInterrupt::Polarity::rising) {
-					LPC_GPIOINT->IO2IntEnR &= ~(1 << pin);
-				} else {
-					LPC_GPIOINT->IO2IntEnF &= ~(1 << pin);
-				}
+	bool GPIOInterruptPin::isFlagged (Polarity polarity) {
+		if ((_pin >= PIN(0, 0)) && (_pin <= PIN(0, 31))) {
+			uint32_t pin = _pin & 0x1F;
+			if (polarity == GPIOInterruptPin::Polarity::rising) {
+				return ((LPC_GPIOINT->IO0IntStatR & (1 << pin)) != 0);
+			} else {
+				return ((LPC_GPIOINT->IO0IntStatF & (1 << pin)) != 0);
+			}
+		} else if ((_pin >= PIN(2, 0)) && (_pin <= PIN(2, 31))) {
+			uint32_t pin = _pin & 0x1F;
+			if (polarity == GPIOInterruptPin::Polarity::rising) {
+				return ((LPC_GPIOINT->IO2IntStatR & (1 << pin)) != 0);
+			} else {
+				return ((LPC_GPIOINT->IO2IntStatF & (1 << pin)) != 0);
 			}
 		}
+		return false;
+	}
 
-		bool isFlagged (uint32_t pin, Polarity polarity) {
-			if ((pin >= PIN(0, 0)) && (pin <= PIN(0, 31))) {
-				pin = pin & 0x1F;
-				if (polarity == Pin::GPIOInterrupt::Polarity::rising) {
-					return ((LPC_GPIOINT->IO0IntStatR & (1 << pin)) != 0);
-				} else {
-					return ((LPC_GPIOINT->IO0IntStatF & (1 << pin)) != 0);
-				}
-			} else if ((pin >= PIN(2, 0)) && (pin <= PIN(2, 31))) {
-				pin = pin & 0x1F;
-				if (polarity == Pin::GPIOInterrupt::Polarity::rising) {
-					return ((LPC_GPIOINT->IO2IntStatR & (1 << pin)) != 0);
-				} else {
-					return ((LPC_GPIOINT->IO2IntStatF & (1 << pin)) != 0);
-				}
-			}
-			return false;
-		}
-
-		void clearFlag (uint32_t pin) {
-			if ((pin >= PIN(0, 0)) && (pin <= PIN(0, 31))) {
-				pin = pin & 0x1F;
-				LPC_GPIOINT->IO0IntClr |= (1 << pin);
-			} else if ((pin >= PIN(2, 0)) && (pin <= PIN(2, 31))) {
-				pin = pin & 0x1F;
-				LPC_GPIOINT->IO2IntClr |= (1 << pin);
-			}
+	void GPIOInterruptPin::clearFlag (void) {
+		if ((_pin >= PIN(0, 0)) && (_pin <= PIN(0, 31))) {
+			uint32_t pin = _pin & 0x1F;
+			LPC_GPIOINT->IO0IntClr |= (1 << pin);
+		} else if ((_pin >= PIN(2, 0)) && (_pin <= PIN(2, 31))) {
+			uint32_t pin = _pin & 0x1F;
+			LPC_GPIOINT->IO2IntClr |= (1 << pin);
 		}
 	}
 }

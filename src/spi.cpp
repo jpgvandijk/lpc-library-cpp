@@ -308,19 +308,22 @@ void SPI0::initialize (Clock::PeripheralClockSpeed clock, uint32_t spi_clock_fre
 	// FIXME: make generic in SPI base method? (+2,+3, function)
 
 	// Init SCK pin
-	Pin::setFunction(PIN(0, 15), Pin::Function::alternate_3);
-	Pin::setPullMode(PIN(0, 15), Pin::PullMode::no_pull);
-	Pin::setOpenDrain(PIN(0, 15), false);
+	GPIOPin pin_sck(PIN(0, 15));
+	pin_sck.setFunction(GPIO::Function::alternate_3);
+	pin_sck.setPullMode(Pin::PullMode::no_pull);
+	pin_sck.setOpenDrain(false);
 
 	// Init MISO pin
-	Pin::setFunction(PIN(0, 17), Pin::Function::alternate_3);
-	Pin::setPullMode(PIN(0, 17), Pin::PullMode::no_pull);
-	Pin::setOpenDrain(PIN(0, 17), false);
+	GPIOPin pin_miso(PIN(0, 17));
+	pin_miso.setFunction(GPIO::Function::alternate_3);
+	pin_miso.setPullMode(Pin::PullMode::no_pull);
+	pin_miso.setOpenDrain(false);
 
 	// Init MOSI pin
-	Pin::setFunction(PIN(0, 18), Pin::Function::alternate_3);
-	Pin::setPullMode(PIN(0, 18), Pin::PullMode::no_pull);
-	Pin::setOpenDrain(PIN(0, 18), false);
+	GPIOPin pin_mosi(PIN(0, 18));
+	pin_mosi.setFunction(GPIO::Function::alternate_3);
+	pin_mosi.setPullMode(Pin::PullMode::no_pull);
+	pin_mosi.setOpenDrain(false);
 
 	uint32_t mode = LegacySPI::mode(bits, clock_phase_2nd_edge, clock_polarity_active_low, lsb_first);
 	LegacySPI::initialize(frequency, spi_clock_frequency, mode);
@@ -349,22 +352,7 @@ void SSP0::initialize (Clock::PeripheralClockSpeed clock, uint32_t spi_clock_fre
 	Clock::setPeripheralClock(Clock::PeripheralClock::ssp_0_clock, clock);
 	uint32_t frequency = Clock::getPeripheralClockFrequency(Clock::PeripheralClock::ssp_0_clock);
 
-	// FIXME: update these pins!
-
-	// Init SCK pin
-	Pin::setFunction(PIN(0, 15), Pin::Function::alternate_3);
-	Pin::setPullMode(PIN(0, 15), Pin::PullMode::no_pull);
-	Pin::setOpenDrain(PIN(0, 15), false);
-
-	// Init MISO pin
-	Pin::setFunction(PIN(0, 17), Pin::Function::alternate_3);
-	Pin::setPullMode(PIN(0, 17), Pin::PullMode::no_pull);
-	Pin::setOpenDrain(PIN(0, 17), false);
-
-	// Init MOSI pin
-	Pin::setFunction(PIN(0, 18), Pin::Function::alternate_3);
-	Pin::setPullMode(PIN(0, 18), Pin::PullMode::no_pull);
-	Pin::setOpenDrain(PIN(0, 18), false);
+	// FIXME: implement pin initialization!
 
 	uint32_t mode = SSP::mode(bits, clock_phase_2nd_edge, clock_polarity_active_low);
 	SSP::initialize(frequency, spi_clock_frequency, mode);
@@ -393,22 +381,7 @@ void SSP1::initialize (Clock::PeripheralClockSpeed clock, uint32_t spi_clock_fre
 	Clock::setPeripheralClock(Clock::PeripheralClock::ssp_1_clock, clock);
 	uint32_t frequency = Clock::getPeripheralClockFrequency(Clock::PeripheralClock::ssp_1_clock);
 
-	// FIXME: update these pins!
-
-	// Init SCK pin
-	Pin::setFunction(PIN(0, 15), Pin::Function::alternate_3);
-	Pin::setPullMode(PIN(0, 15), Pin::PullMode::no_pull);
-	Pin::setOpenDrain(PIN(0, 15), false);
-
-	// Init MISO pin
-	Pin::setFunction(PIN(0, 17), Pin::Function::alternate_3);
-	Pin::setPullMode(PIN(0, 17), Pin::PullMode::no_pull);
-	Pin::setOpenDrain(PIN(0, 17), false);
-
-	// Init MOSI pin
-	Pin::setFunction(PIN(0, 18), Pin::Function::alternate_3);
-	Pin::setPullMode(PIN(0, 18), Pin::PullMode::no_pull);
-	Pin::setOpenDrain(PIN(0, 18), false);
+	// FIXME: implement pin initialization!
 
 	uint32_t mode = SSP::mode(bits, clock_phase_2nd_edge, clock_polarity_active_low);
 	SSP::initialize(frequency, spi_clock_frequency, mode);

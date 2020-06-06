@@ -1,5 +1,6 @@
 #pragma once
 
+#include "LPC17xx.h"
 #include "pin.h"
 #include "clock.h"
 
@@ -28,7 +29,7 @@ namespace System {
 
 	protected:
 		I2C (uint32_t instance);
-		void initialize (uint32_t pin_sda, System::Pin::Function function, uint32_t peripheral_frequency, Mode mode);
+		void initialize (uint32_t pin_sda_index, System::GPIO::Function function, uint32_t peripheral_frequency, Mode mode);
 		void handle (void);
 
 	public:

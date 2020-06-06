@@ -1,5 +1,6 @@
 #pragma once
 
+#include "LPC17xx.h"
 #include "clock.h"
 
 namespace System {
